@@ -1,0 +1,11 @@
+name: nlp_base
+channels:
+  - defaults
+dependencies:
+  - python=3.9
+  - cpuonly
+  - pytorch
+  - torchaudio
+  - torchvision
+  - ipykernel
+prefix: C:\Users\Daniel B\miniconda3\envs\nlp_base

@@ -1,0 +1,35 @@
+# Ignorar todos los archivos PDF
+# *.pdf
+
+# Ignorar todos los archivos de imagen
+# *.jpg
+# *.png
+# *.gif
+*.zip
+*.sqlite3
+
+# Ignorar carpetas específicas
+# carpeta_a_ignorar/
+# otra_carpeta_a_ignorar/
+# data/vdb/chromaPdtGob_pSpDroberta/2487d4bb-55b7-4cd1-8f0e-54b489e2789d
+
+# Ignorar archivos específicos
+# archivo_a_ignorar.txt
+# /data/vdb/chromaPdtGob_pSpDroberta/chroma.sqlite3
+
+# Ignorar todos los archivos de un tipo específico en una carpeta específica
+# carpeta_especifica/*.log
+# data/comprimido/*.zip
+# data/temp/pdf/*.pdf
+# Notebooks/Departamentos/*.pdf
+**/data/comprimido/*.zip
+**/data/temp/pdf/*.pdf
+**/Notebooks/Departamentos/*.pdf
+
+# Ignorar todos los archivos temporales de Python
+*.pyc
+__pycache__/
+
+# Ignorar archivos de configuración de IDEs
+.vscode/
+.idea/
