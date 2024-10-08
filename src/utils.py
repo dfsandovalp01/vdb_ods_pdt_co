@@ -17,8 +17,10 @@ from sklearn.cluster import KMeans
 from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
 
+dir_root = os.path.join(os.getcwd(), os.pardir)
+print(dir_root)
 
-def vdbPDF():
+def vectorstore_chroma():
     embeddings_st = SentenceTransformerEmbeddings(
         # model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
         model_name="hackathon-pln-es/paraphrase-spanish-distilroberta",
@@ -32,9 +34,10 @@ def vdbPDF():
     # from google.colab import drive
     # drive.mount('/content/drive')
     # current_dir = os.getcwd()
-    current_dir = self.dir_root
+    # current_dir = dir_root
 
-    vdb_dir = os.path.join(current_dir, os.pardir, "data", "vdb", "chromaPdtGob_pSpDroberta")
+    # vdb_dir = os.path.join(current_dir, os.pardir, "data", "vdb", "chromaPdtGob_pSpDroberta")
+    vdb_dir = os.path.join(dir_root, "data", "vdb", "chromaPdtGob_pSpDroberta")
     # print(os.path.exists(data_dir))
     vectorstore_chroma = Chroma(
         persist_directory=vdb_dir,#NOMBRE_INDICE_CHROMA,
@@ -43,97 +46,101 @@ def vdbPDF():
 
     return vectorstore_chroma
 
-class lectorPDFnlp:
-    def __init__(self, model_name="hackathon-pln-es/paraphrase-spanish-distilroberta",dir_root):
-        model_name = self.model_name
-        dir_root = self.dir_root
-        dir_temp_img = os.path.join(self.dir_root, "data", "temp", "img")
-        dir_temp_pdf = os.path.join(self.dir_root, "data", "temp", "pdf")
+# class lectorPDFnlp:
+#     def __init__(self, model_name="hackathon-pln-es/paraphrase-spanish-distilroberta",dir_root):
+#         model_name = self.model_name
+#         dir_root = self.dir_root
+dir_temp_img = os.path.join(dir_root, "data", "temp", "img")
+dir_temp_pdf = os.path.join(dir_root, "data", "temp", "pdf")
 
-    def readPageVW(self, docname, page):
+def readPageVW(docname, page, dir_temp_img=dir_temp_img):
+    page_view = None
+    with pdfplumber.open(docname) as pdf:
+        page_view = pdf.pages[page-1].to_image()
+        # dir = os.path.join(self.dir_root, "data", "temp", "img")
+        # dir = f"/content/images"
+        # dir = dir.replace('Departamentos/','')#.replace('Departamentos/','')
+        # Guarda la imagen como .png
+        os.makedirs(dir_temp_img,exist_ok=True)
+        # print(f"ruta error: {dir_temp_img}/page_{page}_doc_{docname.replace('Departamentos/','').replace('.pdf','.png')}")
+        page_view.save(f"{dir_temp_img}/page_{page}_doc_{docname.replace('Departamentos/','').replace('.pdf','.png')}")
+    return page_view
+
+def readZip(idDoc,page, nameZip='Departamentos', dir_root=dir_root):
+    dir=os.path.join(dir_root,'Notebooks','Departamentos')
+    # def readZip(idDoc,page,dir=os.path.join(os.getcwd(), "Departamentos")):
+    # def readZip(idDoc,page,dir_temp_pdf=dir_temp_pdf):
+    for _ in [f for f in os.listdir(dir) if f.endswith('.pdf')]:
+        os.remove(os.path.join(dir, _))
+    docname = f'{nameZip}/{idDoc}.pdf'
+    # docname = os.path.join(dir,f'{idDoc}.pdf')
+    # docname = os.path.join(dir, f'{idDoc}.pdf')
+    # print(f'docname: {docname}')
+    if os.path.exists(docname):
+        # os.remove(docname)
+        page_view = readPageVW(docname, page)
+        # print(f"{} ha sido eliminado.")
+    else:
+        # print(f"El archivo {i} no existe.")
+        pages = []
+        bdl_corpus = pd.DataFrame()
         page_view = None
-        with pdfplumber.open(docname) as pdf:
-            page_view = pdf.pages[page-1].to_image()
-            # dir = os.path.join(self.dir_root, "data", "temp", "img")
-            # dir = f"/content/images"
-            # dir = dir.replace('Departamentos/','')#.replace('Departamentos/','')
-            # Guarda la imagen como .png
-            os.makedirs(self.dir_temp_img,exist_ok=True)
-            page_view.save(f"{self.dir_temp_img}/page_{page}_doc_{docname.replace('Departamentos/','').replace('.pdf','.png')}")
-        return page_view
-
-    def readZip(self,idDoc,page):
-        dir=os.path.join(self.dir_root,'Notebooks','Departamentos')
-        # def readZip(idDoc,page,dir=os.path.join(os.getcwd(), "Departamentos")):
-        # def readZip(idDoc,page,dir_temp_pdf=dir_temp_pdf):
-        # for _ in [f for f in os.listdir(dir) if f.endswith('.pdf')]:
-        #     os.remove(os.path.join(dir, _))
-        docname = f'{dir}/{idDoc}.pdf'
-        # docname = os.path.join(dir, f'{idDoc}.pdf')
-        # print(f'docname: {docname}')
-        if os.path.exists(docname):
-            # os.remove(docname)
-            page_view = readPageVW(docname, page)
-            # print(f"{} ha sido eliminado.")
-        else:
-            # print(f"El archivo {i} no existe.")
-            pages = []
-            bdl_corpus = pd.DataFrame()
-            page_view = None
-            # ruta = '/content/drive/MyDrive/Automatizacion ODS 11a1/Pruebas/Departamentos/datos/Departamentos.zip'
-            ruta = os.path.join(self.dir_root, "data", "comprimido", "Departamentos.zip")
-            # Abrir el archivo .zip
-            with zipfile.ZipFile(ruta, 'r') as zip_ref:
-            # Listar el contenido del .zip
+        # ruta = '/content/drive/MyDrive/Automatizacion ODS 11a1/Pruebas/Departamentos/datos/Departamentos.zip'
+        ruta = os.path.join(dir_root, "data", "comprimido", "Departamentos.zip")
+        
+        # Abrir el archivo .zip
+        with zipfile.ZipFile(ruta, 'r') as zip_ref:
+        # Listar el contenido del .zip
             lista_archivos = zip_ref.namelist()
             # print(lista_archivos)
 
             try:
                 # i = i.replace('Departamentos/','')
                 zip_ref.extract(docname)
+                # print(f"Archivo {docname} extraído.")
                 page_view = readPageVW(docname, page)
 
             except Exception as e:
                 print(f'Error:  {e}')
                 pass
-        
-            
-        return page_view
-
-
-    from sentence_transformers import SentenceTransformer, util
-
-def model():
-    return SentenceTransformer('hackathon-pln-es/paraphrase-spanish-distilroberta')
-
     
+        
+    return page_view
 
-def search(query='',filter='',dpto='',rank='15', clusters='4'):
+
+from sentence_transformers import SentenceTransformer, util
+
+# def model():
+model = SentenceTransformer('hackathon-pln-es/paraphrase-spanish-distilroberta')
+
+lista_archivos_pdf = ['05.pdf', '08.pdf', '15.pdf', '17.pdf', '18.pdf', '19.pdf', '20.pdf', '23.pdf', '25.pdf', '27.pdf', '41.pdf', '52.pdf', '54.pdf', '63.pdf', '66.pdf',
+'68.pdf', '73.pdf', '76.pdf', '81.pdf', '85.pdf', '86.pdf', '88.pdf', '91.pdf', '94.pdf', '95.pdf', '97.pdf', '99.pdf']
+# data_dir = os.path.join(self.dir_root, "data")
+# print(data_dir)
+codigos_dane = pd.read_csv(os.path.join(dir_root, "data", "Tabla_codigos_Dane.txt"), sep='|', dtype=str)
+codigoDepartamentoPdf = [_.replace('.pdf','') for _ in lista_archivos_pdf]
+codigos_dane_dpto = codigos_dane.groupby(['CodigoDepartamento', 'NombreDepartamento']).agg({'CodigoMunicipio':'count'}).reset_index()
+codigos_dane_dpto = codigos_dane_dpto[codigos_dane_dpto.CodigoDepartamento.isin(codigoDepartamentoPdf)]    
+
+def search(query,filter,dpto,rank, clusters):
     
 #departamentos
-    lista_archivos_pdf = ['05.pdf', '08.pdf', '15.pdf', '17.pdf', '18.pdf', '19.pdf', '20.pdf', '23.pdf', '25.pdf', '27.pdf', '41.pdf', '52.pdf', '54.pdf', '63.pdf', '66.pdf',
-    '68.pdf', '73.pdf', '76.pdf', '81.pdf', '85.pdf', '86.pdf', '88.pdf', '91.pdf', '94.pdf', '95.pdf', '97.pdf', '99.pdf']
-    # data_dir = os.path.join(self.dir_root, "data")
-    # print(data_dir)
-    codigos_dane = pd.read_csv(os.path.join(sys.path[-1], "data", "Tabla_codigos_Dane.txt"), sep='|', dtype=str)
-    codigoDepartamentoPdf = [_.replace('.pdf','') for _ in lista_archivos_pdf]
-    codigos_dane_dpto = codigos_dane.groupby(['CodigoDepartamento', 'NombreDepartamento']).agg({'CodigoMunicipio':'count'}).reset_index()
-    codigos_dane_dpto = codigos_dane_dpto[codigos_dane_dpto.CodigoDepartamento.isin(codigoDepartamentoPdf)]
+
 
     # query = "proyecciones de poblacion"
     # doc1 = None
     # if os.path.exists('/content/images'):
-    if os.path.exists((os.path.join(sys.path[-1], "data", "temp", "img"))):
+    if os.path.exists((os.path.join(dir_root, "data", "temp", "img"))):
         # for _ in [f for f in os.listdir('/content/images') if f.endswith('.png')]:
-        for _ in [f for f in os.listdir((os.path.join(sys.path[-1], "data", "temp", "img"))) if f.endswith('.png')]:
-        os.remove((os.path.join(sys.path[-1], "data", "temp", "img", _)))
+        for _ in [f for f in os.listdir((os.path.join(dir_root, "data", "temp", "img"))) if f.endswith('.png')]:
+            os.remove((os.path.join(dir_root, "data", "temp", "img", _)))
         # print(f"{i} ha sido eliminado.")
     if filter == "Filtro":
         doc1 = codigos_dane_dpto[codigos_dane_dpto.NombreDepartamento == dpto].reset_index(drop=True).loc[0,'CodigoDepartamento']
         doc1 = f'{doc1}.pdf'
-        docs = vectorstore_chroma.similarity_search_with_score(query, k=rank, filter={"source": doc1})  # .unique()
+        docs = vectorstore_chroma().similarity_search_with_score(query, k=rank, filter={"source": doc1})  # .unique()
     else:
-        docs = vectorstore_chroma.similarity_search_with_score(query, k=rank)
+        docs = vectorstore_chroma().similarity_search_with_score(query, k=rank)
 
 
 
@@ -162,11 +169,11 @@ def search(query='',filter='',dpto='',rank='15', clusters='4'):
     for index, row in df.iterrows():
         # imgs.append(readZip(row['idDANE'], row['page']))
         readZip(row['idDANE'], row['page'])
-    png_files = [f for f in os.listdir((os.path.join(sys.path[-1], "data", "temp", "img"))) if f.startswith('page_')]
+    png_files = [f for f in os.listdir((os.path.join(dir_root, "data", "temp", "img"))) if f.startswith('page_')]
     # png_files = [f for f in os.listdir('/content/images') if f.startswith('page_')]
     for file in png_files:
         # image_path = os.path.join('/content/images', file)
-        image_path = os.path.join((os.path.join(sys.path[-1], "data", "temp", "img", file)))
+        image_path = os.path.join((os.path.join(dir_root, "data", "temp", "img", file)))
         image = Image.open(image_path)
         image = [image, file]
         imgs.append(image)
@@ -219,7 +226,7 @@ def search(query='',filter='',dpto='',rank='15', clusters='4'):
 
     
     plt.grid(False)
-    ruta_img = os.path.join(current_dir, os.pardir, "data","temp","img")
+    ruta_img = os.path.join(dir_root, "data","temp","img")
     # ruta_img = '/content/images'
     plt.savefig(os.path.join(ruta_img, "grupos.png"))
 
@@ -247,10 +254,10 @@ def search(query='',filter='',dpto='',rank='15', clusters='4'):
     # Define possible genres
     # clientes = clients.tolist()
 
-def demoLaunch(fun=search()):
+def demo(codigos_dane_dpto=codigos_dane_dpto):
     with gr.Blocks() as demo:
         with gr.Row():
-            with gr.Column():
+            with gr.Column():                
                 prompt = gr.Textbox(lines=5, placeholder="Escribe aquí tu consulta...", label="Consulta")
                 gr.Examples(["dinámica población","desarrollo territorial equilibrado", "margen fiscal local"], inputs=[prompt])
             with gr.Column():
@@ -276,7 +283,7 @@ def demoLaunch(fun=search()):
             galeria1 = gr.Gallery(label="Hoja PDT", show_label=True, elem_id="gallery1", scale=2,object_fit="contain", height=1000)#"auto")
 
 
-        translate_btn.click(fun, inputs=[prompt, filtros, departamento, salidas, clusters], outputs=[tabla, galeria, galeria1])
+        translate_btn.click(search, inputs=[prompt, filtros, departamento, salidas, clusters], outputs=[tabla, galeria, galeria1])
     
     return demo
 

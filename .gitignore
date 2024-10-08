@@ -8,6 +8,7 @@
 *.zip
 *.sqlite3
 
+
 # Ignorar carpetas específicas
 # carpeta_a_ignorar/
 # otra_carpeta_a_ignorar/
